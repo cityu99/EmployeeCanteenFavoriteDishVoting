@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LeanCloud 测试</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+    <h1>LeanCloud 测试</h1>
+
+    <button id="createButton">创建数据</button>
+    <button id="queryButton">查询数据</button>
+
+    <div id="result"></div>
+
+    <script>
+        // 初始化 LeanCloud 应用
+        AV.init({
+            appId: 'IaurY3fo7rIv0JDbcGDiDzBi-MdYXbMMI',
+            appKey: 'SSkdrtUR7bDHK5ffMDCSJw07'
+        });
+
+        // 监听创建数据按钮点击事件
+        $('#createButton').click(function() {
+            var TestObject = AV.Object.extend('TestObject');
+            var testObject = new TestObject();
+            testObject.set('name', 'Hello World!');
+            testObject.save().then(function(object) {
+                alert('数据创建成功，objectId：' + object.id);
+            });
+        });
+
+        // 监听查询数据按钮点击事件
+        $('#queryButton').click(function() {
+            var query = new AV.Query('TestObject');
+            query.find().then(function(results) {
+                var resultDiv = $('#result');
+                resultDiv.empty();
+
+                results.forEach(function(result) {
+                    var objectId = result.id;
+                    var name = result.get('name');
+
+                    var itemDiv = $('<div>').text('objectId: ' + objectId + ', name: ' + name);
+                    resultDiv.append(itemDiv);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

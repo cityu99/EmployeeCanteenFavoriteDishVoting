@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>菜品选择</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+  <h1>菜品选择</h1>
+  <div id="menu-items-container"></div>
+  <button onclick="saveSelections()">保存</button>
+</body>
+
+<script>
+  // 初始化 LeanCloud
+  AV.init({
+      appId: 'IaurY3fo7rIv0JDbcGDiDzBi-MdYXbMMI',
+      appKey: 'SSkdrtUR7bDHK5ffMDCSJw07'
+  });
+
+  // 获取菜品列表
+  var Menu = AV.Object.extend('Menu');
+  var menuQuery = new AV.Query(Menu);
+  menuQuery.find().then(function (menuItems) {
+      var menuItemsContainer = document.getElementById('menu-items-container');
+      for (var i = 0; i < menuItems.length; i++) {
+          var menuItemDiv = document.createElement('div');
+          menuItemDiv.className = 'menu-item';
+
+          var menuItemName = document.createElement('span');
+          menuItemName.innerText = menuItems[i].get('name') + ": ";
+          menuItemDiv.appendChild(menuItemName);
+
+          var selectedCheckbox = document.createElement('input');
+          selectedCheckbox.type = 'checkbox';
+          selectedCheckbox.checked = menuItems[i].get('selected');
+          selectedCheckbox.dataset.menuItemId = menuItems[i].id;
+          menuItemDiv.appendChild(selectedCheckbox);
+
+          menuItemsContainer.appendChild(menuItemDiv);
+      }
+  }).catch(function (error) {
+      console.error('获取菜品列表失败：', error);
+  });
+
+  // 保存选择状态
+  function saveSelections() {
+      var checkboxes = document.querySelectorAll('.menu-item input[type=checkbox]');
+      for (var i = 0; i < checkboxes.length; i++) {
+          var menuItemId = checkboxes[i].dataset.menuItemId;
+          var menuItem = AV.Object.createWithoutData('Menu', menuItemId);
+          menuItem.set('selected', checkboxes[i].checked);
+          menuItem.save().then(function () {
+              console.log('选择状态保存成功');
+          }).catch(function (error) {
+              console.error('选择状态保存失败：', error);
+          });
+      }
+  }
+</script>
+
+</html>

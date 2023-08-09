@@ -3,19 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <title>菜品匿名投票</title>
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage/dist/av-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
-    <script src="main.js"></script>
 </head>
 <body>
-    <h1>菜品匿名投票</h1>
+    <h1>菜品投票</h1>
+    <div id="menu-items"></div>
+    <button onclick="goToSettingPage()">跳转到设置页面</button>
+    
+    <script>
+      // 初始化 LeanCloud
+      AV.init({
+        appId: 'IaurY3fo7rIv0JDbcGDiDzBi-MdYXbMMI',
+        appKey: 'SSkdrtUR7bDHK5ffMDCSJw07'
+      });
 
-    <h2>当前投票菜品类型：<span id="currentType"></span></h2>
-    <button id="changeTypeButton">更换投票菜品类型</button>
+      // 点击按钮后跳转到 setting.html 页面
+      function goToSettingPage() {
+        window.location.href = "setting.html";
+    }
+  
+      // 获取指定菜品的投票数
+      function getVotes(menuItem) {
+        var query = new AV.Query('MenuItem');
+        query.equalTo('name', menuItem);
 
-    <div id="menu-list"></div>
+        return query.first().then(function(menuItemObj) {
+        if (menuItemObj) {
+            return menuItemObj.get('votes');
+        } else {
+            return 0;
+        }
+        }).catch(function(error) {
+        console.error('获取票数失败：', error);
+        return 0;
+        });
+    }
+  
+      // 进行投票
+      function vote(menuItem) {
+        var query = new AV.Query('MenuItem');
+        query.equalTo('name', menuItem);
+  
+        return query.first().then(function(menuItemObj) {
+          if (menuItemObj) {
+            menuItemObj.increment('votes', 1);
+            return menuItemObj.save();
+          } else {
+            var MenuItem = AV.Object.extend('MenuItem');
+            var item = new MenuItem();
+            item.set('name', menuItem);
+            item.set('votes', 1);
+            return item.save();
+          }
+        }).catch(function(error) {
+          console.error('投票失败：', error);
+        });
+      }
+  
+     // 页面加载时生成菜品投票选项
+window.addEventListener('load', function () {
+  var menuItemsContainer = document.getElementById('menu-items');
 
-    <h2>投票结果：</h2>
-    <div id="result"></div>
-</body>
-</html>
+  // 获取可选择的菜品列表
+  var menuQuery = new AV.Query('Menu');
+  menuQuery.equalTo('selected', true); // 添加查询条件，只获取selected为true的菜品
+  menuQuery.find().then(function (menuItems) {
+    // 遍历菜品列表生成投票选项
+    for (var i = 0; i < menuItems.length; i++) {
+      (function (menuItem) {
+        var menuItemDiv = document.createElement('div');
+        menuItemDiv.className = 'menu-item';
+
+        var menuItemName = document.createElement('span');
+        menuItemName.innerText = menuItem.get('name') + ': ';
+        menuItemDiv.appendChild(menuItemName);
+
+        var votesCount = document.createElement('span');
+        votesCount.id = 'votes-' + menuItem.get('name');
+        votesCount.innerText = '0 票'; // 设置初始票数为 0
+        menuItemDiv.appendChild(votesCount);
+
+        var voteButton = document.createElement('button');
+        voteButton.innerText = '投票';
+        voteButton.onclick = function () {
+          vote(menuItem.get('name')).then(function () {
+            // 投票成功后立即更新票数到页面上
+            getVotes(menuItem.get('name')).then(function (votes) {
+              votesCount.innerText = votes + ' 票';
+              var votesElement = document.getElementById('votes-' + menuItem.get('name'));
+              votesElement.innerText = votes + ' 票';
+              alert('投票成功！');
+            });
+          });
+        };
+        menuItemDiv.appendChild(voteButton);
+
+        var votesElement = document.createElement('span');
+        votesElement.id = 'votes-' + menuItem.get('name');
+        menuItemDiv.appendChild(votesElement);
+
+        menuItemsContainer.appendChild(menuItemDiv);
+      })(menuItems[i]);
+    }
+
+    // 获取票数并更新到页面上
+    for (var j = 0; j < menuItems.length; j++) {
+      (function (menuItem) {
+        getVotes(menuItem.get('name')).then(function (votes) {
+          var votesElement = document.getElementById('votes-' + menuItem.get('name'));
+          votesElement.innerText = votes + ' 票';
+        });
+      })(menuItems[j]);
+    }
+  }).catch(function (error) {
+    console.error('获取菜品列表失败：', error);
+  });
+});
+
+    </script>
+  </body>
+  </html>
